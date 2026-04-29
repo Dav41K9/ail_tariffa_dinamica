@@ -127,7 +127,7 @@ class AILCheapestSlotSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self) -> str | None:
         """Restituisce il nome della fascia con tariffa minima."""
-        if not self.coordinator.data:
+        if not self.coordinator.
             return None
 
         tariff_data = {
@@ -135,7 +135,7 @@ class AILCheapestSlotSensor(CoordinatorEntity, SensorEntity):
             if isinstance(v, (int, float))
         }
         
-        if not tariff_data:
+        if not tariff_
             return None
 
         cheapest = min(tariff_data, key=tariff_data.get)
