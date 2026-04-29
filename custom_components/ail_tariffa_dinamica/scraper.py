@@ -1,10 +1,9 @@
-"""Scraper diagnostico e robusto per le tariffe dinamiche AIL."""
+"""Scraper per le tariffe dinamiche AIL con validazione data."""
 import re
 import logging
 from datetime import datetime, timedelta, date
 from bs4 import BeautifulSoup
 import aiohttp
-from .const import TIME_SLOTS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,86 +18,86 @@ class AILTariffScraper:
             current = datetime.now()
             expected_date = current.date() if current.hour < 18 else current.date() + timedelta(days=1)
 
-        _LOGGER.info("🔍 Fetching AIL tariffs for expected date: %s", expected_date)
+        _LOGGER.debug("Fetching AIL tariffs, expected date on page: %s", expected_date)
 
         try:
             headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
                 "Accept-Language": "it-CH,it;q=0.9,en;q=0.8"
             }
             async with self.session.get(self.URL, headers=headers, timeout=30) as response:
                 response.raise_for_status()
                 html = await response.text()
-        except Exception as e:
-            _LOGGER.error("❌ Errore di rete: %s", e)
+        except aiohttp.ClientError as e:
             raise ValueError(f"Errore di rete: {e}")
-
-        # 💾 Salva HTML per debug manuale
-        try:
-            with open("/config/ail_debug.html", "w", encoding="utf-8") as f:
-                f.write(html)
-        except Exception:
-            pass
+        except TimeoutError:
+            raise ValueError("Timeout download pagina AIL")
 
         return self._parse_html(html, expected_date)
 
     def _parse_html(self, html: str, expected_date: date) -> dict:
         soup = BeautifulSoup(html, 'html.parser')
-        
-        # Validazione data
         page_date_obj, date_str = self._extract_and_validate_date(soup, expected_date)
-        _LOGGER.info("📅 Data pagina valida: %s", date_str)
+        _LOGGER.info("Data pagina validata: %s", date_str)
 
-        # Trova tabella
         table = None
         for tbl in soup.find_all('table'):
-            if any(f in tbl.get_text() for f in ["Mattutina", "Solare", "Serale", "Notturna"]):
+            if any(fascia in tbl.get_text() for fascia in ["Mattutina", "Solare", "Serale", "Notturna"]):
                 table = tbl
                 break
+
         if not table:
             raise ValueError("Tabella tariffe non trovata")
+
+        rows = []
+        tbody = table.find('tbody')
+        if tbody:
+            rows = tbody.find_all('tr')
+        else:
+            all_rows = table.find_all('tr')
+            rows = [r for r in all_rows if 'Fascia' not in r.get_text() and 'Utilizzo' not in r.get_text()]
 
         results = {}
         fascia_keywords = ["Mattutina", "Solare", "Serale", "Notturna"]
 
-        for row in table.find_all('tr'):
-            cells = row.find_all(['td', 'th'])
+        for row in rows:
+            cells = row.find_all('td')
             if len(cells) < 2:
                 continue
 
-            fascia_text = cells[0].get_text(separator=' ', strip=True)
-            fascia_name = next((kw for kw in fascia_keywords if kw in fascia_text), None)
+            first_cell = cells[0]
+            fascia_text = first_cell.get_text(separator=' ', strip=True)
+            
+            fascia_name = None
+            for kw in fascia_keywords:
+                if kw in fascia_text:
+                    fascia_name = kw
+                    break
             if not fascia_name:
                 continue
 
-            price_text = cells[-1].get_text(strip=True)
+            last_cell = cells[-1]
+            price_text = last_cell.get_text(strip=True)
             
-            # 🔧 PULIZIA AGGRESSIVA: rimuove NBSP, spazi, valute, simboli
+            # Pulizia aggressiva per gestire caratteri nascosti
             clean_price = price_text.replace('\xa0', '').replace('\u2009', '').replace(' ', '')
-            clean_price = re.sub(r'[^\d.,]', '', clean_price)  # Tieni solo numeri, punti e virgole
+            clean_price = re.sub(r'[^\d.,]', '', clean_price)
             
-            # 🔍 LOG DIAGNOSTICO: mostra esattamente cosa c'è nella stringa
-            _LOGGER.debug("💰 Grezzo: %r | Pulito: %r", price_text, clean_price)
-
-            # Regex blindata
-            match = re.search(r'(\d+[.,]\d+)', clean_price)
+            # Regex corretta: \d+ per le cifre, [,.] per separatore decimale
+            match = re.search(r'(\d+[,.]\d+)', clean_price)
             if not match:
-                _LOGGER.warning("⚠️ Regex fallita per %s. Stringa pulita: '%s'", fascia_name, clean_price)
+                _LOGGER.warning("Nessun prezzo valido trovato per %s in: '%s' (pulito: '%s')", fascia_name, price_text, clean_price)
                 continue
 
-            # Conversione sicura
-            try:
-                value = float(match.group(1).replace(',', '.'))
-                results[TIME_SLOTS[fascia_name]] = value
-                _LOGGER.info("✓ Trovata %s: %.2f CHF/100kWh", fascia_name, value)
-            except ValueError as e:
-                _LOGGER.error("❌ Errore conversione float per %s: %s", fascia_name, e)
-                continue
+            value = float(match.group(1).replace(',', '.'))
+            
+            from .const import TIME_SLOTS
+            results[TIME_SLOTS[fascia_name]] = value
+            _LOGGER.debug("✓ Trovata %s: %.2f CHF/100kWh", fascia_name, value)
 
         if len(results) != 4:
-            _LOGGER.error("❌ Trovate solo %d/4 fasce. Dati parziali: %s", len(results), results)
-            raise ValueError(f"Trovate solo {len(results)}/4 fasce orarie")
+            raise ValueError(f"Trovate solo {len(results)}/4 fasce orarie. Dettagli: {list(results.keys())}")
 
         results["date"] = date_str
         return results
@@ -117,9 +116,11 @@ class AILTariffScraper:
             if match:
                 day, month_it, year = match.groups()
                 month = months_map.get(month_it.lower())
-                if not month: continue
+                if not month:
+                    continue
                 page_date = date(int(year), month, int(day))
                 if page_date != expected_date:
                     raise ValueError(f"⚠️ Data mismatch: pagina={page_date}, attesa={expected_date}")
                 return page_date, f"{day} {month_it} {year}"
-        raise ValueError("Impossibile trovare una data valida")
+
+        raise ValueError("Impossibile trovare una data valida nella pagina AIL")
