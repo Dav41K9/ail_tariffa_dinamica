@@ -2,7 +2,7 @@
 from homeassistant.const import Platform
 
 DOMAIN = "ail_tariffa_dinamica"
-PLATFORMS = [Platform.SENSOR, Platform.BUTTON]  # ← Aggiunto BUTTON
+PLATFORMS = [Platform.SENSOR, Platform.BUTTON, Platform.BINARY_SENSOR]  # ← Aggiunto BINARY_SENSOR
 
 # Configurazione sensori
 SENSOR_CONFIGS = {
@@ -36,6 +36,15 @@ BUTTON_CONFIG = {
     }
 }
 
+# Configurazione diagnostica
+DIAGNOSTIC_CONFIG = {
+    "health": {
+        "name": "Stato integrazione AIL",
+        "icon_ok": "mdi:check-circle",
+        "icon_error": "mdi:alert-circle"
+    }
+}
+
 # Mappatura nomi fascia → chiavi interne
 TIME_SLOTS = {
     "Mattutina": "mattutina",
@@ -51,4 +60,10 @@ DEVICE_INFO = {
     "name": "AIL Tariffa Dinamica",
     "sw_version": "1.1.0",
     "configuration_url": "https://www.ail.ch/aziende/elettricita/prodotti/Tariffa-dinamica/tariffa-dinamica.html"
+}
+
+# Configurazione notifiche
+NOTIFICATION_CONFIG = {
+    "title": "⚠️ AIL Tariffa Dinamica - Avviso",
+    "enabled": True  # Imposta False per disabilitare le notifiche
 }
