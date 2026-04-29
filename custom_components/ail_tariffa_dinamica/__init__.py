@@ -4,8 +4,10 @@ from datetime import timedelta
 import aiohttp
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr  # ← IMPORT CORRETTO
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from .const import DOMAIN, PLATFORMS, DEVICE_INFO, NOTIFICATION_CONFIG
+from .scraper import AILTariffScraper
 
 _LOGGER = logging.getLogger(__name__)
 UPDATE_INTERVAL = timedelta(hours=6)
@@ -26,8 +28,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = AILDataUpdateCoordinator(hass, scraper, entry)
     await coordinator.async_config_entry_first_refresh()
     
-    # Registrazione nel Device Registry
-    device_registry = hass.helpers.device_registry.async_get(hass)
+    # Registrazione nel Device Registry ← CORRETTO
+    device_registry = dr.async_get(hass)
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
         identifiers={(DOMAIN, entry.entry_id)},
@@ -82,7 +84,7 @@ class AILDataUpdateCoordinator(DataUpdateCoordinator):
         self._entry = entry
         self._last_error = None
         self._error_count = 0
-        self._notified = False  # Flag anti-spam notifiche
+        self._notified = False
     
     @property
     def diagnostic_data(self) -> dict:
@@ -106,7 +108,7 @@ class AILDataUpdateCoordinator(DataUpdateCoordinator):
                 _LOGGER.info("✅ Integrazione AIL ripristinata dopo errore: %s", self._last_error)
                 self._last_error = None
                 self._error_count = 0
-                self._notified = False  # Reset flag notifiche
+                self._notified = False
             
             return result
             
@@ -126,7 +128,6 @@ class AILDataUpdateCoordinator(DataUpdateCoordinator):
     
     async def _send_error_notification(self, error_msg: str):
         """Invia notifica Home Assistant quando si verifica un errore."""
-        # Categorizza il tipo di errore per messaggio più utile
         if "rete" in error_msg.lower() or "timeout" in error_msg.lower():
             suggestion = "Verifica la connessione internet o se il sito AIL è raggiungibile."
         elif "data" in error_msg.lower() or "mismatch" in error_msg.lower():
@@ -156,19 +157,3 @@ class AILDataUpdateCoordinator(DataUpdateCoordinator):
                 "notification_id": f"{DOMAIN}_error_{self._entry.entry_id}"
             }
         )
-        
-        # Prova anche mobile push se disponibile (es. mobile_app)
-        if "mobile_app" in self.hass.config.components:
-            await self.hass.services.async_call(
-                "notify",
-                "mobile_app",  # Nota: l'utente dovrà adattare al proprio device
-                {
-                    "title": NOTIFICATION_CONFIG["title"],
-                    "message": f"AIL: {error_msg[:100]}{'...' if len(error_msg)>100 else ''}",
-                    "data": {
-                        "tag": f"{DOMAIN}_error",
-                        "clickAction": "/config/devices/device/"
-                    }
-                },
-                blocking=False
-            )
