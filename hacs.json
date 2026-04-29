@@ -1,0 +1,12 @@
+{
+  "name": "AIL Tariffa Dinamica",
+  "content_in_root": false,
+  "render_readme": true,
+  "homeassistant": "2024.1.0",
+  "zip_release": false,
+  "filename": "ail_tariffa_dinamica.zip",
+  "persistent_directory": false,
+  "domains": ["sensor"],
+  "country": ["CH"],
+  "iot_class": "Cloud Polling"
+}
