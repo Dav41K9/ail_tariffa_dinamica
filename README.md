@@ -41,4 +41,6 @@ config/custom_components/ail_tariffa_dinamica/
 
 
 
-    ⚠️ Disclaimer: Questa integrazione non è affiliata, sponsorizzata o approvata da AIL SA. L'uso è a proprio rischio. Le tariffe sono pubblicate da AIL e potrebbero cambiare formato senza preavviso.
+---
+
+⚠️ Disclaimer: Questa integrazione non è affiliata, sponsorizzata o approvata da AIL SA. L'uso è a proprio rischio. Le tariffe sono pubblicate da AIL e potrebbero cambiare formato senza preavviso.
