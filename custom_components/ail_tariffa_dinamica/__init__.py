@@ -1,4 +1,4 @@
-"""AIL Tariffa Dinamica - Componente principale con diagnostica e notifiche."""
+"""AIL Tariffa Dinamica - Componente principale."""
 import logging
 from datetime import timedelta
 import aiohttp
@@ -8,8 +8,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DOMAIN, PLATFORMS, DEVICE_INFO, NOTIFICATION_CONFIG
+# ←←← IMPORT CRITICO: deve essere presente e corretto ←←←
 from .scraper import AILTariffScraper
+from .const import DOMAIN, PLATFORMS, DEVICE_INFO, NOTIFICATION_CONFIG
 
 _LOGGER = logging.getLogger(__name__)
 UPDATE_INTERVAL = timedelta(hours=6)
@@ -24,13 +25,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN]["session"] = aiohttp.ClientSession()
 
     session = hass.data[DOMAIN]["session"]
+    
+    # ←←← Qui viene usata AILTariffScraper (ora importata correttamente) ←←←
     scraper = AILTariffScraper(session)
 
-    # Coordinatore con supporto notifiche
+    # Coordinatore
     coordinator = AILDataUpdateCoordinator(hass, scraper, entry)
     await coordinator.async_config_entry_first_refresh()
 
-    # Registrazione nel Device Registry ← CORRETTO
+    # Registrazione dispositivo
     device_registry = dr.async_get(hass)
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
@@ -44,7 +47,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    # Setup piattaforme: sensor, button, binary_sensor
+    # Setup piattaforme
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
@@ -57,7 +60,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
 
-        # Chiudi sessione HTTP se non ci sono più entry
         if not hass.data[DOMAIN]:
             session = hass.data[DOMAIN].pop("session", None)
             if session:
@@ -67,13 +69,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Reload dell'integrazione al cambio config."""
+    """Reload dell'integrazione."""
     await async_unload_entry(hass, entry)
     await async_setup_entry(hass, entry)
 
 
 class AILDataUpdateCoordinator(DataUpdateCoordinator):
-    """Coordinatore con tracciamento errori e notifiche."""
+    """Coordinatore con gestione errori e notifiche."""
 
     def __init__(self, hass: HomeAssistant, scraper, entry: ConfigEntry):
         super().__init__(
@@ -90,7 +92,7 @@ class AILDataUpdateCoordinator(DataUpdateCoordinator):
 
     @property
     def diagnostic_data(self) -> dict:
-        """Restituisce dati diagnostici per il binary sensor."""
+        """Dati per il binary sensor diagnostico."""
         return {
             "last_update_success": self.last_update_success,
             "last_update_timestamp": self.last_update_success_timestamp.isoformat() if self.last_update_success_timestamp else None,
@@ -101,13 +103,12 @@ class AILDataUpdateCoordinator(DataUpdateCoordinator):
         }
 
     async def _async_update_data(self):
-        """Metodo chiamato periodicamente per aggiornare i dati con gestione errori."""
+        """Aggiornamento dati con gestione errori."""
         try:
             result = await self.scraper.fetch_tariffs()
 
-            # Reset errori in caso di successo
             if self._last_error:
-                _LOGGER.info("✅ Integrazione AIL ripristinata dopo errore: %s", self._last_error)
+                _LOGGER.info("✅ Integrazione AIL ripristinata: %s", self._last_error)
                 self._last_error = None
                 self._error_count = 0
                 self._notified = False
@@ -119,9 +120,8 @@ class AILDataUpdateCoordinator(DataUpdateCoordinator):
             self._last_error = error_msg
             self._error_count += 1
 
-            _LOGGER.error("❌ Errore aggiornamento AIL (tentativo #%d): %s", self._error_count, error_msg)
+            _LOGGER.error("❌ Errore aggiornamento AIL (#%d): %s", self._error_count, error_msg)
 
-            # Notifica solo al primo errore (anti-spam)
             if NOTIFICATION_CONFIG["enabled"] and not self._notified:
                 await self._send_error_notification(error_msg)
                 self._notified = True
@@ -129,15 +129,15 @@ class AILDataUpdateCoordinator(DataUpdateCoordinator):
             raise UpdateFailed(f"Errore aggiornamento AIL: {error_msg}")
 
     async def _send_error_notification(self, error_msg: str):
-        """Invia notifica Home Assistant quando si verifica un errore."""
+        """Notifica persistente in caso di errore."""
         if "rete" in error_msg.lower() or "timeout" in error_msg.lower():
-            suggestion = "Verifica la connessione internet o se il sito AIL è raggiungibile."
+            suggestion = "Verifica connessione internet o raggiungibilità sito AIL."
         elif "data" in error_msg.lower() or "mismatch" in error_msg.lower():
-            suggestion = "La data sulla pagina AIL non corrisponde. Potrebbero aver cambiato formato."
+            suggestion = "Data sulla pagina AIL non corrisponde. Potrebbero aver cambiato formato."
         elif "tabella" in error_msg.lower() or "parsing" in error_msg.lower():
-            suggestion = "La struttura HTML della pagina AIL potrebbe essere cambiata. Controlla il sito."
+            suggestion = "Struttura HTML pagina AIL cambiata. Controlla il sito."
         elif "4 fasce" in error_msg.lower():
-            suggestion = "Non tutte le fasce orarie sono state trovate. Verifica la tabella sul sito AIL."
+            suggestion = "Non tutte le fasce trovate. Verifica tabella sul sito AIL."
         else:
             suggestion = "Controlla i log di Home Assistant per dettagli tecnici."
 
@@ -146,8 +146,7 @@ class AILDataUpdateCoordinator(DataUpdateCoordinator):
             f"❌ `{error_msg}`\n\n"
             f"🔧 {suggestion}\n\n"
             f"📦 Dispositivo: {DEVICE_INFO['name']}\n"
-            f"🌐 URL: `{self.scraper.URL}`\n\n"
-            f"_Questa notifica non si ripeterà finché l'errore persiste._"
+            f"🌐 URL: `{self.scraper.URL}`"
         )
 
         await self.hass.services.async_call(
