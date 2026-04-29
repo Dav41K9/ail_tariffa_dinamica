@@ -18,7 +18,7 @@ jobs:
         uses: hacs/action@main
         with:
           category: "integration"
-          ignore: "brands,archived"  # ← Ignora brands (non obbligatorio per custom)
+         # ignore: "brands,archived"  # ← Ignora brands (non obbligatorio per custom)
 
   validate-hass:
     runs-on: ubuntu-latest
