@@ -34,12 +34,11 @@ Integrazione personalizzata per Home Assistant che legge le **tariffe elettriche
 5. **Riavvia Home Assistant**
 
 ### Metodo 2: Installazione manuale
-
+---
 ```bash
 # Copia la cartella nel tuo config di Home Assistant:
 config/custom_components/ail_tariffa_dinamica/
-
-
+```
 
 ---
 
