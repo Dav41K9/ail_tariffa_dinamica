@@ -1,0 +1,28 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "L'integrazione AIL Tariffa Dinamica è già configurata."
+    },
+    "error": {
+      "cannot_connect": "Impossibile connettersi al sito AIL. Verifica la connessione internet.",
+      "invalid_date": "La data trovata sulla pagina AIL non corrisponde a quella attesa.",
+      "parse_error": "Errore nel parsing della pagina AIL. La struttura HTML potrebbe essere cambiata."
+    },
+    "step": {
+      "user": {
+        "title": "AIL Tariffa Dinamica",
+        "description": "Configurazione dell'integrazione per recuperare le tariffe elettriche dinamiche da AIL."
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "mattutina": { "name": "Tariffa Mattutina" },
+      "solare": { "name": "Tariffa Solare" },
+      "serale": { "name": "Tariffa Serale" },
+      "notturna": { "name": "Tariffa Notturna" },
+      "date": { "name": "Data Tariffe" },
+      "cheapest_slot": { "name": "Fascia più economica" }
+    }
+  }
+}
