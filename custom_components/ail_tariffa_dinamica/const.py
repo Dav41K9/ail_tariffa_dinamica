@@ -63,7 +63,7 @@ DEVICE_INFO = {
     "manufacturer": "AIL (Aziende Industriali di Lugano)",
     "model": "Tariffa Dinamica",
     "name": "AIL Tariffa Dinamica",
-    "sw_version": "1.2.1",
+    "sw_version": "1.1.0",
     "configuration_url": "https://www.ail.ch/aziende/elettricita/prodotti/Tariffa-dinamica/tariffa-dinamica.html"
 }
 
