@@ -3,10 +3,10 @@ from homeassistant.const import Platform, EntityCategory
 
 DOMAIN = "ail_tariffa_dinamica"
 
-# Piattaforme supportate
+# ⚠️ CRITICO: Usa Platform ENUM, non stringhe!
 PLATFORMS = [Platform.SENSOR, Platform.BUTTON, Platform.BINARY_SENSOR]
 
-# Ora di aggiornamento preferita (per logging)
+# Ora di aggiornamento preferita
 UPDATE_TIME = (18, 15)
 
 # Mappatura fasce orarie
@@ -58,12 +58,12 @@ DIAGNOSTIC_CONFIG = {
     }
 }
 
-# Informazioni dispositivo per Device Registry
+# Informazioni dispositivo - CRITICO: identifiers devono coincidere ovunque
 DEVICE_INFO = {
     "manufacturer": "AIL (Aziende Industriali di Lugano)",
     "model": "Tariffa Dinamica",
     "name": "AIL Tariffa Dinamica",
-    "sw_version": "1.1.0",  # ← Allineato a manifest.json
+    "sw_version": "1.2.0",
     "configuration_url": "https://www.ail.ch/aziende/elettricita/prodotti/Tariffa-dinamica/tariffa-dinamica.html"
 }
 
