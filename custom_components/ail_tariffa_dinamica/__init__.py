@@ -9,8 +9,7 @@ from .const import DOMAIN, PLATFORMS, DEVICE_INFO
 from .scraper import AILTariffScraper
 
 _LOGGER = logging.getLogger(__name__)
-
-UPDATE_INTERVAL = timedelta(hours=6)  # Aggiornamento ogni 6 ore
+UPDATE_INTERVAL = timedelta(hours=6)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -28,7 +27,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = AILDataUpdateCoordinator(hass, scraper)
     await coordinator.async_config_entry_first_refresh()
     
-    # Registrazione nel Device Registry
+    # Registrazione nel Device Registry (una sola volta per dispositivo)
     device_registry = hass.helpers.device_registry.async_get(hass)
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
@@ -42,12 +41,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     hass.data[DOMAIN][entry.entry_id] = coordinator
     
-    # Setup delle piattaforme (sensori)
+    # Setup delle piattaforme (sensor + button)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     
-    # Listener per aggiornamento config
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
-    
     return True
 
 
