@@ -2,9 +2,9 @@
 from homeassistant.const import Platform
 
 DOMAIN = "ail_tariffa_dinamica"
-PLATFORMS = [Platform.SENSOR]
+PLATFORMS = [Platform.SENSOR, Platform.BUTTON]  # ← Aggiunto BUTTON
 
-# Configurazione dei sensori
+# Configurazione sensori
 SENSOR_CONFIGS = {
     "mattutina": {
         "name": "Tariffa Mattutina AIL",
@@ -25,6 +25,14 @@ SENSOR_CONFIGS = {
         "name": "Tariffa Notturna AIL",
         "icon": "mdi:weather-night",
         "time_slot": "21:00 - 06:00"
+    }
+}
+
+# Configurazione pulsante
+BUTTON_CONFIG = {
+    "refresh": {
+        "name": "Aggiorna tariffe AIL",
+        "icon": "mdi:refresh"
     }
 }
 
