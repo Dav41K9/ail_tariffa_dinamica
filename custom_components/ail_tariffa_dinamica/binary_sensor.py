@@ -39,7 +39,7 @@ class AILHealthSensor(CoordinatorEntity, BinarySensorEntity):
         self._attr_unique_id = f"{DOMAIN}_health_{entry.entry_id}"
         self._attr_name = config["name"]
         self._attr_device_class = BinarySensorDeviceClass.PROBLEM
-        self._attr_entity_category = "diagnostic"  ← Appare sotto "Diagnostic" nel dispositivo
+        self._attr_entity_category = "diagnostic"  # Appare sotto "Diagnostic" nel dispositivo
 
     @property
     def device_info(self) -> DeviceInfo:
