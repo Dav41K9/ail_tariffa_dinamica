@@ -2,29 +2,42 @@
 from homeassistant.const import Platform
 
 DOMAIN = "ail_tariffa_dinamica"
-PLATFORMS = [Platform.SENSOR, Platform.BUTTON, Platform.BINARY_SENSOR]  # ← Aggiunto BINARY_SENSOR
+
+# Piattaforme supportate
+PLATFORMS = [Platform.SENSOR, Platform.BUTTON, Platform.BINARY_SENSOR]
+
+# Ora di aggiornamento preferita (per logging)
+UPDATE_TIME = (18, 15)
+
+# Mappatura fasce orarie
+TIME_SLOTS = {
+    "Mattutina": "mattutina",
+    "Solare": "solare",
+    "Serale": "serale",
+    "Notturna": "notturna"
+}
 
 # Configurazione sensori
 SENSOR_CONFIGS = {
     "mattutina": {
         "name": "Tariffa Mattutina AIL",
-        "icon": "mdi:weather-sunny",
-        "time_slot": "06:00 - 10:00"
+        "time_slot": "06:00-10:00",
+        "icon": "mdi:weather-sunny"
     },
     "solare": {
         "name": "Tariffa Solare AIL",
-        "icon": "mdi:weather-partly-cloudy",
-        "time_slot": "10:00 - 17:00"
+        "time_slot": "10:00-17:00",
+        "icon": "mdi:solar-power"
     },
     "serale": {
         "name": "Tariffa Serale AIL",
-        "icon": "mdi:weather-night-partly-cloudy",
-        "time_slot": "17:00 - 21:00"
+        "time_slot": "17:00-22:00",
+        "icon": "mdi:weather-night"
     },
     "notturna": {
         "name": "Tariffa Notturna AIL",
-        "icon": "mdi:weather-night",
-        "time_slot": "21:00 - 06:00"
+        "time_slot": "22:00-06:00",
+        "icon": "mdi:moon-waning-crescent"
     }
 }
 
@@ -45,25 +58,17 @@ DIAGNOSTIC_CONFIG = {
     }
 }
 
-# Mappatura nomi fascia → chiavi interne
-TIME_SLOTS = {
-    "Mattutina": "mattutina",
-    "Solare": "solare",
-    "Serale": "serale",
-    "Notturna": "notturna"
-}
-
-# Informazioni dispositivo per il Device Registry
+# Informazioni dispositivo per Device Registry
 DEVICE_INFO = {
     "manufacturer": "AIL (Aziende Industriali di Lugano)",
     "model": "Tariffa Dinamica",
     "name": "AIL Tariffa Dinamica",
-    "sw_version": "1.1.0",
+    "sw_version": "1.2.0",
     "configuration_url": "https://www.ail.ch/aziende/elettricita/prodotti/Tariffa-dinamica/tariffa-dinamica.html"
 }
 
 # Configurazione notifiche
 NOTIFICATION_CONFIG = {
     "title": "⚠️ AIL Tariffa Dinamica - Avviso",
-    "enabled": True  # Imposta False per disabilitare le notifiche
+    "enabled": True
 }
