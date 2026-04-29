@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "AIL Tariffa Dinamica",
+        "description": "{info}",
+        "data": {}
+      }
+    },
+    "abort": {
+      "already_configured": "✅ L'integrazione è già configurata."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opzioni",
+        "description": "{note}",
+        "data": {}
+      }
+    }
+  }
+}
