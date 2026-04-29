@@ -18,29 +18,12 @@ jobs:
         uses: hacs/action@main
         with:
           category: "integration"
+          ignore: "brands,archived"  # ← Ignora brands (non obbligatorio per custom)
 
   validate-hass:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install aiohttp beautifulsoup4 pytest pytest-homeassistant-custom-component
-      
-      - name: Run hassfest via script
-        run: |
-          # Clona il repo HA per ottenere lo script hassfest
-          git clone --depth 1 https://github.com/home-assistant/core.git /tmp/core
-          python /tmp/core/script/hassfest --config custom_components/ail_tariffa_dinamica
-      
-      - name: Run pylint (optional but recommended)
-        run: |
-          pip install pylint
-          pylint custom_components/ail_tariffa_dinamica --errors-only --ignore=tests
+      - name: Hassfest validation
+        uses: home-assistant/actions/hassfest@master
