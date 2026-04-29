@@ -2,7 +2,7 @@
   "domain": "ail_tariffa_dinamica",
   "name": "AIL Tariffa Dinamica",
   "codeowners": ["@Dav41K9"],
-  "config_flow": false,
+  "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/Dav41K9/ail_tariffa_dinamica",
   "integration_type": "device",
