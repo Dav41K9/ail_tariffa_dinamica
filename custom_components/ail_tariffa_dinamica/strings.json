@@ -23,6 +23,18 @@
       "notturna": { "name": "Tariffa Notturna" },
       "date": { "name": "Data Tariffe" },
       "cheapest_slot": { "name": "Fascia più economica" }
+    },
+    "button": {
+      "refresh": { "name": "Aggiorna tariffe" }
+    },
+    "binary_sensor": {
+      "health": {
+        "name": "Stato integrazione",
+        "state": {
+          "off": "OK - Nessun errore",
+          "on": "⚠️ Errore rilevato"
+        }
+      }
     }
   }
 }
