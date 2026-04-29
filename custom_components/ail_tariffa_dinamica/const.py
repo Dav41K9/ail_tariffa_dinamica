@@ -1,5 +1,5 @@
 """Costanti per l'integrazione AIL Tariffa Dinamica."""
-from homeassistant.const import Platform
+from homeassistant.const import Platform, EntityCategory
 
 DOMAIN = "ail_tariffa_dinamica"
 
@@ -12,7 +12,7 @@ UPDATE_TIME = (18, 15)
 # Mappatura fasce orarie
 TIME_SLOTS = {
     "Mattutina": "mattutina",
-    "Solare": "solare",
+    "Solare": "solare", 
     "Serale": "serale",
     "Notturna": "notturna"
 }
@@ -26,7 +26,7 @@ SENSOR_CONFIGS = {
     },
     "solare": {
         "name": "Tariffa Solare AIL",
-        "time_slot": "10:00-17:00",
+        "time_slot": "10:00-17:00", 
         "icon": "mdi:solar-power"
     },
     "serale": {
@@ -63,7 +63,7 @@ DEVICE_INFO = {
     "manufacturer": "AIL (Aziende Industriali di Lugano)",
     "model": "Tariffa Dinamica",
     "name": "AIL Tariffa Dinamica",
-    "sw_version": "1.2.0",
+    "sw_version": "1.1.0",  # ← Allineato a manifest.json
     "configuration_url": "https://www.ail.ch/aziende/elettricita/prodotti/Tariffa-dinamica/tariffa-dinamica.html"
 }
 
