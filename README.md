@@ -43,3 +43,9 @@ config/custom_components/ail_tariffa_dinamica/
 ---
 
 ⚠️ Disclaimer: Questa integrazione non è affiliata, sponsorizzata o approvata da AIL SA. L'uso è a proprio rischio. Le tariffe sono pubblicate da AIL e potrebbero cambiare formato senza preavviso.
+
+[![Validate](https://github.com/Dav41K9/ail_tariffa_dinamica/actions/workflows/validate.yml/badge.svg)](https://github.com/Dav41K9/ail_tariffa_dinamica/actions/workflows/validate.yml)
+[![hacs][hacsbadge]][hacs]
+
+[hacs]: https://github.com/hacs/integration
+[hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg
