@@ -64,7 +64,8 @@ class AILTariffSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self) -> float | None:
         """Restituisce il valore della tariffa."""
-        if not self.coordinator.
+        # ✅ FIX 1: aggiunto ".data"
+        if not self.coordinator.data:
             return None
         return self.coordinator.data.get(self._slot_key)
 
@@ -95,7 +96,8 @@ class AILTariffDateSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self) -> str | None:
         """Restituisce la data delle tariffe."""
-        if not self.coordinator.
+        # ✅ FIX 2: aggiunto ".data"
+        if not self.coordinator.data:
             return None
         return self.coordinator.data.get("date")
 
@@ -127,7 +129,8 @@ class AILCheapestSlotSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self) -> str | None:
         """Restituisce il nome della fascia con tariffa minima."""
-        if not self.coordinator.
+        # ✅ FIX 3: aggiunto ".data"
+        if not self.coordinator.data:
             return None
 
         tariff_data = {
@@ -135,7 +138,8 @@ class AILCheapestSlotSensor(CoordinatorEntity, SensorEntity):
             if isinstance(v, (int, float))
         }
         
-        if not tariff_
+        # ✅ FIX 4: completato "tariff_data"
+        if not tariff_data:
             return None
 
         cheapest = min(tariff_data, key=tariff_data.get)
