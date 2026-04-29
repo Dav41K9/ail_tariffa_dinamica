@@ -38,3 +38,7 @@ Integrazione personalizzata per Home Assistant che legge le **tariffe elettriche
 ```bash
 # Copia la cartella nel tuo config di Home Assistant:
 config/custom_components/ail_tariffa_dinamica/
+
+
+
+    ⚠️ Disclaimer: Questa integrazione non è affiliata, sponsorizzata o approvata da AIL SA. L'uso è a proprio rischio. Le tariffe sono pubblicate da AIL e potrebbero cambiare formato senza preavviso.
