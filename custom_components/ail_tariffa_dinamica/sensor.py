@@ -20,7 +20,7 @@ async def async_setup_entry(
 ) -> None:
     """Configura i sensori per AIL."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    entry_id = entry.entry_id  # Passato a tutte le entità
+    entry_id = entry.entry_id
 
     entities = [
         AILTariffSensor(coordinator, entry_id, slot_key, config)
@@ -107,14 +107,17 @@ class AILCheapestSlotSensor(CoordinatorEntity, SensorEntity):
         if not self.coordinator.data:
             return None
 
+        # Filtra solo le fasce orarie (esclude "date" e altri metadati)
         tariff_data = {
             k: v for k, v in self.coordinator.data.items() 
             if isinstance(v, (int, float))
         }
-        if not tariff_
+        if not tariff_data:  # ← FIX: era troncato in "if not tariff_"
             return None
 
         cheapest = min(tariff_data, key=tariff_data.get)
+        
+        # Mappa inversa per nome leggibile
         reverse_map = {v: k for k, v in TIME_SLOTS.items()}
         slot_name = reverse_map.get(cheapest, cheapest.capitalize())
 
