@@ -1,14 +1,18 @@
 """Sensori per le tariffe AIL + data + fascia più economica."""
 import logging
+from typing import Any
 
-from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
+from homeassistant.components.sensor import (
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.device_registry import DeviceInfo
 
-from .const import DOMAIN, SENSOR_CONFIGS, TIME_SLOTS
+from .const import DOMAIN, SENSOR_CONFIGS, TIME_SLOTS, TARIFF_UNIT
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,14 +30,16 @@ async def async_setup_entry(
         AILTariffSensor(coordinator, entry_id, slot_key, config)
         for slot_key, config in SENSOR_CONFIGS.items()
     ]
+
     entities.append(AILTariffDateSensor(coordinator, entry_id))
     entities.append(AILCheapestSlotSensor(coordinator, entry_id))
-    
+
     async_add_entities(entities, update_before_add=True)
 
 
 class AILTariffSensor(CoordinatorEntity, SensorEntity):
     """Sensore per una singola fascia tariffaria."""
+
     _attr_has_entity_name = True
 
     def __init__(self, coordinator, entry_id: str, slot_key: str, config: dict):
@@ -41,31 +47,46 @@ class AILTariffSensor(CoordinatorEntity, SensorEntity):
         self._entry_id = entry_id
         self._slot_key = slot_key
         self._config = config
-        
+
         self._attr_unique_id = f"{DOMAIN}_{slot_key}"
         self._attr_name = config["name"]
         self._attr_icon = config["icon"]
-        self._attr_device_class = SensorDeviceClass.MONETARY
+
+        # Le tariffe sono prezzi istantanei (CHF/100kWh), non importi cumulati.
+        # Non usare SensorDeviceClass.MONETARY perché richiede state_class total.
         self._attr_state_class = SensorStateClass.MEASUREMENT
-        self._attr_native_unit_of_measurement = "CHF/100kWh"
-        self._attr_extra_state_attributes = {
-            "fascia_oraria": config["time_slot"],
-            "integration": DOMAIN
-        }
+        self._attr_native_unit_of_measurement = TARIFF_UNIT
+        self._attr_suggested_display_precision = 2
 
     @property
     def device_info(self) -> DeviceInfo:
         return DeviceInfo(identifiers={(DOMAIN, self._entry_id)})
 
     @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {
+            "fascia_oraria": self._config["time_slot"],
+            "integration": DOMAIN,
+        }
+
+    @property
     def native_value(self) -> float | None:
         if not self.coordinator.data:
             return None
-        return self.coordinator.data.get(self._slot_key)
+
+        value = self.coordinator.data.get(self._slot_key)
+        if value is None:
+            return None
+
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
 
 
 class AILTariffDateSensor(CoordinatorEntity, SensorEntity):
     """Mostra la data di validità delle tariffe."""
+
     _attr_has_entity_name = True
 
     def __init__(self, coordinator, entry_id: str):
@@ -88,6 +109,7 @@ class AILTariffDateSensor(CoordinatorEntity, SensorEntity):
 
 class AILCheapestSlotSensor(CoordinatorEntity, SensorEntity):
     """Indica la fascia oraria con tariffa più economica."""
+
     _attr_has_entity_name = True
 
     def __init__(self, coordinator, entry_id: str):
@@ -96,34 +118,45 @@ class AILCheapestSlotSensor(CoordinatorEntity, SensorEntity):
         self._attr_unique_id = f"{DOMAIN}_cheapest_slot"
         self._attr_name = "Fascia AIL più economica"
         self._attr_icon = "mdi:star-check"
-        self._attr_extra_state_attributes = {}
 
     @property
     def device_info(self) -> DeviceInfo:
         return DeviceInfo(identifiers={(DOMAIN, self._entry_id)})
 
-    @property
-    def native_value(self) -> str | None:
+    def _tariff_data(self) -> dict[str, float]:
+        """Estrae solo i valori tariffari numerici."""
         if not self.coordinator.data:
-            return None
+            return {}
 
-        # Filtra solo le fasce orarie (esclude "date" e altri metadati)
-        tariff_data = {
-            k: v for k, v in self.coordinator.data.items() 
+        return {
+            k: float(v)
+            for k, v in self.coordinator.data.items()
             if isinstance(v, (int, float))
         }
-        if not tariff_data:  # ← FIX: era troncato in "if not tariff_"
+
+    @property
+    def native_value(self) -> str | None:
+        tariff_data = self._tariff_data()
+        if not tariff_data:
             return None
 
         cheapest = min(tariff_data, key=tariff_data.get)
-        
-        # Mappa inversa per nome leggibile
+
+        reverse_map = {v: k for k, v in TIME_SLOTS.items()}
+        return reverse_map.get(cheapest, cheapest.capitalize())
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        tariff_data = self._tariff_data()
+        if not tariff_data:
+            return {}
+
+        cheapest = min(tariff_data, key=tariff_data.get)
         reverse_map = {v: k for k, v in TIME_SLOTS.items()}
         slot_name = reverse_map.get(cheapest, cheapest.capitalize())
 
-        self._attr_extra_state_attributes = {
+        return {
             "fascia": slot_name,
-            "prezzo": f"{tariff_data[cheapest]:.2f} CHF/100kWh",
-            "orario": SENSOR_CONFIGS[cheapest]["time_slot"]
+            "prezzo": f"{tariff_data[cheapest]:.2f} {TARIFF_UNIT}",
+            "orario": SENSOR_CONFIGS.get(cheapest, {}).get("time_slot"),
         }
-        return slot_name
